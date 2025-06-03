@@ -1,0 +1,336 @@
+---
+title: "Helper_qualitative"
+author: "Mariana Chaves"
+date: "2025-02-15"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+setwd("C:/Users/maria/Desktop/PBS/1st Term/Statistics for Business/Group Assignment/Dataset/summer-products-with-rating-and-performance_2020-08.csv")
+data <- read.csv("summer-products-with-rating-and-performance_2020-08.csv")
+
+library(dplyr)
+
+```
+
+
+##CLEANING
+# Remove variables - p31, p47 & p210
+```{r}
+data <- data %>%
+  select(-c(title, tags, has_urgency_banner, urgency_text, merchant_name, 
+            merchant_info_subtitle, theme, crawl_month, 
+            merchant_has_profile_picture:product_picture))
+```
+
+# Remove duplicates from product_id - p43
+```{r}
+data <- data %>% distinct(product_id, .keep_all = TRUE)
+```
+
+# Shipping Translation
+# Define the group of names to be translated to Standard Shipping
+```{r}
+standard_translation <- c("Livraison standard", "Envio Padrão", "Expediere Standard", 
+                      "Standardversand", "Envío normal", "Standardowa wysyłka", 
+                      "Standart Gönderi", "الشحن القياسي", "การส่งสินค้ามาตรฐาน", 
+                      "Spedizione standard", "ការដឹកជញ្ជូនតាមស្តង់ដារ", 
+                      "Стандартная доставка", "Envio PadrÃ£o", "Standart GÃ¶nderi", "Standardowa wysyÅ‚ka")
+```
+# Define the group of names to be translated to Express Shipping
+```{r}
+express_translation <- c("Livraison Express", "Ekspresowa wysyłka", "Ekspresowa wysyÅ‚ka")
+```
+# replace the standard_translation by Standard Shipping - p214
+```{r}
+data$shipping_option_name <- ifelse(data$shipping_option_name %in% 
+                                    standard_translation, "Standard Shipping", data$shipping_option_name)
+```
+# replace the express_translation by Standard Shipping
+```{r}
+data$shipping_option_name <- ifelse(data$shipping_option_name %in% 
+                                    express_translation, "Express Shipping", data$shipping_option_name)
+```
+
+# Sizes Cleaning
+# Divide the sizes by choosen standard units(3XS to 6XL)
+```{r}
+size_3xs <- c("XXXS")
+size_xxs <- c("Size XXS", "SIZE XXS", "Size -XXS", "XXS", "Size-XXS", "SIZE-XXS")
+size_xs <- c("XS.", "XS", "SIZE XS","Size-XS")
+size_s <- c("S (waist58-62cm)", "Size-S", "S Diameter 30cm", "25-S", "S.", "Size S", "S(Pink & Black)", "Size/S", "pants-S", "Size--S", "S", "s", "Suit-S", "Size S.", "S..", "S Pink", "SIZE S", "size S", "S(bust 88cm)", "US-S")
+size_m <- c("M", "M.", "Size M")
+size_l <- c("32/L", "Size-L", "L.", "L", "SizeL")
+size_xl <- c("X   L", "XL", "1 PC - XL")
+size_xxl <- c("2XL", "XXL")
+size_3xl <- c("3XL", "04-3XL", "XXXL")
+size_4xl <- c("SIZE-4XL", "XXXXL", "Size4XL", "4XL")
+size_5xl <- c("5XL", "XXXXXL", "Size-5XL")
+size_6xl <- c("6XL")
+```
+# replace the sizes defined before by the standard units
+```{r}
+data$product_variation_size_id <- ifelse(data$product_variation_size_id %in% 
+                                    size_3xs, "3XS", data$product_variation_size_id)
+data$product_variation_size_id <- ifelse(data$product_variation_size_id %in% 
+                                         size_xxs, "XXS", data$product_variation_size_id)
+data$product_variation_size_id <- ifelse(data$product_variation_size_id %in% 
+                                         size_xs, "XS", data$product_variation_size_id)
+data$product_variation_size_id <- ifelse(data$product_variation_size_id %in% 
+                                         size_s, "S", data$product_variation_size_id)
+data$product_variation_size_id <- ifelse(data$product_variation_size_id %in% 
+                                         size_m, "M", data$product_variation_size_id)
+data$product_variation_size_id <- ifelse(data$product_variation_size_id %in% 
+                                         size_l, "L", data$product_variation_size_id)
+data$product_variation_size_id <- ifelse(data$product_variation_size_id %in% 
+                                         size_xl, "XL", data$product_variation_size_id)
+data$product_variation_size_id <- ifelse(data$product_variation_size_id %in% 
+                                         size_xxl, "XXL", data$product_variation_size_id)
+data$product_variation_size_id <- ifelse(data$product_variation_size_id %in% 
+                                         size_xxl, "XXL", data$product_variation_size_id)
+data$product_variation_size_id <- ifelse(data$product_variation_size_id %in% 
+                                         size_3xl, "3XL", data$product_variation_size_id)
+data$product_variation_size_id <- ifelse(data$product_variation_size_id %in% 
+                                         size_4xl, "4XL", data$product_variation_size_id)
+data$product_variation_size_id <- ifelse(data$product_variation_size_id %in% 
+                                         size_5xl, "5XL", data$product_variation_size_id)
+data$product_variation_size_id <- ifelse(data$product_variation_size_id %in% 
+                                         size_6xl, "6XL", data$product_variation_size_id)
+```
+
+#Change colour with similar designations:
+
+```{r}
+colour_blue <- c("navyblue", "skyblue", "blue", "navy blue", "prussianblue", "blue & pink", "lakeblue", "Blue", "navyblue & white", "lightblue", "darkblue", "denimblue", "navy")
+colour_white <- c("white", "white & green", "offwhite", "White", "whitestripe", "whitefloral", "white & black", "white & red")
+colour_black <- c("offblack", "black & stripe", "Black", "black & green", "black & yellow", "black & blue", "black", "blackwhite", "coolblack", "black & white")
+colour_green <- c("armygreen", "green", "Army green", "applegreen", "darkgreen", "lightgreen", "army green", "fluorescentgreen", "mintgreen", "light green", "army", "camouflage")
+colour_red <- c("RED", "wine red", "Rose red", "winered", "lightred", "watermelonred", "winered & yellow", "wine", "burgundy", "rosered", "coralred", "red", "red & blue", "orange-red", "jasper", "claret")
+colour_pink <- c("rose", "pink & black", "pink", "pink & grey", "pink & white", "pink & blue", "dustypink", "lightpink", "Pink", "rosegold")
+colour_grey <- c("greysnakeskinprint", "grey", "lightgray", "lightgrey", "gray", "gray & white")
+colour_orange <- c("orange & camouflage", "orange", "apricot")
+colour_yellow <- c("lightyellow", "yellow")
+colour_brown <- c("brown", "coffee", "camel", "brown & yellow")
+colour_beige <- c("lightkhaki", "beige", "khaki", "nude", "ivory", "tan")
+colour_leopard <- c("leopardprint", "leopard")
+colour_purple <- c("violet", "purple", "lightpurple")
+
+data$product_color <- ifelse(data$product_color %in% 
+colour_blue, "blue", data$product_color)
+data$product_color <- ifelse(data$product_color %in% 
+colour_white, "white", data$product_color)
+data$product_color <- ifelse(data$product_color %in% 
+colour_black, "black", data$product_color)
+data$product_color <- ifelse(data$product_color %in% 
+colour_green, "green", data$product_color)
+data$product_color <- ifelse(data$product_color %in% 
+colour_red, "red", data$product_color)
+data$product_color <- ifelse(data$product_color %in% 
+colour_pink, "pink", data$product_color)
+data$product_color <- ifelse(data$product_color %in% 
+colour_grey, "grey", data$product_color)
+data$product_color <- ifelse(data$product_color %in% 
+colour_orange, "orange", data$product_color)
+data$product_color <- ifelse(data$product_color %in% 
+colour_yellow, "yellow", data$product_color)
+data$product_color <- ifelse(data$product_color %in% 
+colour_brown, "brown", data$product_color)
+data$product_color <- ifelse(data$product_color %in% 
+colour_beige, "beige", data$product_color)
+data$product_color <- ifelse(data$product_color %in% 
+colour_leopard, "leopard", data$product_color)
+data$product_color <- ifelse(data$product_color %in% 
+colour_purple, "purple", data$product_color)
+
+```
+#Replace irrelevant sizes to appear NA:
+
+```{r}
+valid_sizes <- c("3XS","XXS", "XS", "S", "M", "L", "XL", "XXL", "3XL", "4XL", "5XL", "6XL")
+
+# Replace invalid sizes with NA
+data <- data %>%
+  mutate(product_variation_size_id = ifelse(product_variation_size_id %in% valid_sizes, 
+                                            product_variation_size_id, NA))
+```
+
+
+
+#QUALITATIVE VARIABLES:
+
+#Helper function 1 (shipping option and ad boosts):
+```{r}
+
+qualitative_chart<-function (data, col_name) {
+
+#libraries needed
+library(ggplot2)
+library(randomcoloR)
+library(dplyr)
+  
+#transform the shipping option price from numeric variables to factors to treat them as categorical:
+data[[col_name]]=as.factor(data[[col_name]])
+
+# Generate distinct colors for each unique shipping price
+num_colors1 <- length(unique(data[[col_name]]))
+color_palette1 <- distinctColorPalette(num_colors1)
+
+# Bar plot for shipping_option_price:
+# Create the bar plot with the 'col_name' column data from 'data'
+ggplot(data, aes(x = .data[[col_name]], fill = .data[[col_name]])) +  
+  # Use 'geom_bar()' to create a bar chart based on the frequencies of 'col_name'
+  geom_bar() +
+  # Manually set the colors for the fill of the bars, using the 'color_palette1' palette
+  scale_fill_manual(values = color_palette1) +
+   # Add labels to the plot: title, x-axis, y-axis, and fill legend
+  labs(
+    title = paste("Distribution of", col_name),  # Title of the plot
+    x = col_name,  # Label for the x-axis (column name)
+    y = "Count",  # Label for the y-axis (frequency/count)
+    fill = col_name  # Set legend title to match the column name (optional)
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))# Rotate text
+}
+
+qualitative_chart(data,"shipping_option_price")
+qualitative_chart(data,"uses_ad_boosts")
+```
+
+#Helper function 2 (product color and product size):
+```{r}
+qualitative_chart_reordered<-function (data, col_name) {
+
+#libraries needed
+library(ggplot2)
+library(randomcoloR)
+library(forcats)
+#substitute empty lines for NA:
+data$product_color[data$product_color == ""] <- NA
+
+#remove the NA values from a specific variable: 
+data <- data %>% 
+  filter(!is.na(.data[[col_name]]))
+
+# Generate distinct colors for each unique shipping price
+num_colors1 <- length(unique(data[[col_name]]))
+color_palette1 <- distinctColorPalette(num_colors1)
+
+# Bar plot for shipping_option_price:
+# Create the bar plot with the 'col_name' column data from 'data'
+ggplot(data, aes(x = fct_infreq(.data[[col_name]]), fill = .data[[col_name]])) +  
+  # Use 'geom_bar()' to create a bar chart based on the frequencies of 'col_name'
+  geom_bar() +
+  # Manually set the colors for the fill of the bars, using the 'color_palette1' palette
+  scale_fill_manual(values = color_palette1) +
+  # Add labels to the plot: title, x-axis, y-axis, and fill legend
+  labs(
+    title = paste("Distribution of", col_name),  # Title of the plot
+    x = col_name,  # Label for the x-axis (column name)
+    y = "Count",  # Label for the y-axis (frequency/count)
+    fill = col_name  # Set legend title to match the column name (optional)
+  ) +
+    # Use the minimal theme for the plot style
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),  # Rotate text
+    plot.margin = margin(100, 10, 50, 10, "pt"),  # Expand bottom margin
+    legend.position = "none"  # Remove legend
+  )
+}
+
+qualitative_chart_reordered(data,"product_variation_size_id")
+qualitative_chart_reordered(data,"product_color")
+
+```
+
+#estimates the frequency of black and white items:
+```{r}
+# Create a frequency table of the 'product_color' column
+freq_table_color <- table(data$product_color)
+# Print the frequency table
+print(freq_table_color)
+
+# Calculate the percentage of black color by dividing its frequency by the total frequency 
+# and multiplying by 100 to get the percentage
+percentage_black <- (freq_table_color["black"] / sum(freq_table_color)) * 100
+print(percentage_black)
+
+# Calculate the percentage of white color by dividing its frequency by the total frequency 
+# and multiplying by 100 to get the percentage
+percentage_white <- (freq_table_color["white"] / sum(freq_table_color)) * 100
+print(percentage_white)
+
+```
+
+
+#estimates the frequency of size S:
+```{r}
+# Create a frequency table of the 'product_variation_size_id' column
+freq_table_size <- table(data$product_variation_size_id)
+# Print the frequency table
+print(freq_table_size)
+
+# Calculate the percentage of size "S" by dividing its frequency by the total frequency 
+# and multiplying by 100 to get the percentage
+percentage_s <- (freq_table_size["S"] / sum(freq_table_size)) * 100
+print(percentage_s)
+
+```
+
+
+#estimates the frequency of ad boosts:
+```{r}
+# Create a frequency table of the 'uses_ad_boosts' column
+freq_table_boosts <- table(data$uses_ad_boosts)
+print(freq_table_boosts)
+
+# Calculate the percentage of "1" (indicating the use of ad boosts) by dividing its frequency by the total frequency and multiplying by 100 to get the percentage
+percentage_boosts <- (freq_table_boosts["1"] / sum(freq_table_boosts)) * 100
+print(percentage_boosts)
+```
+
+
+
+```{r}
+#qualitative_chart(data,"shipping_option_price")
+#qualitative_chart(data,"uses_ad_boosts")
+#qualitative_chart(data,"product_variation_size_id")
+#qualitative_chart(data,"product_color")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

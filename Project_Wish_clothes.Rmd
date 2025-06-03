@@ -1,0 +1,228 @@
+---
+title: "R Notebook"
+output:
+  word_document: default
+  html_notebook: default
+---
+## In this Group Assignment, we were asked to apply the knowledge of the Statistics for Business’ course into practice. For this assignment we were given a dataset that contains clothing products on Wish (specifically, summer clothing) and its characteristics such as price, colour, size and others. The main goal is to explore the dataset and make try to make a data analysis of the summer products sold by Wish, focusing on the main characteristics and attributes of this dataset.
+
+##To achieve this, we analysed the dataset given by the professor. This dataset is also available at https://www.kaggle.com/code/unstill/wish-clothing-sales-eda-prediction
+
+##Our first task was to make a preliminary analysis of the give dataset, by opening it on Excel. To organize the data, we separated into different columns, has show in Kaggle.
+
+##Then, we imported the Dataset, by following the steps given in class: Environment -> Import Dataset -> From Excel -> Browse (Wish_Sclothes) -> Import
+
+## Step 1. Check, Analyse the Dataset
+
+# 1.1. Install and load necessary packages that may be useful to the project
+
+```{r}
+library(dplyr)     # Package for data manipulation
+#install.packages(ggplot2)    # Package useful for data visualization, for instance scatter plots
+library(ggplot2)
+library(openxlsx)
+
+Wish_SClothes <- read.xlsx("Wish_SClothes.xlsx", sheet = 1)  # or specify sheet name or index
+
+```
+# 1.1. We checked for missing values, duplicates, and structure of the dataset.
+
+```{r}
+colSums(is.na(Wish_SClothes)) #The function colSums(is.na(Wish_SClothes)) in R is used to count the number of missing (NA) values in each column of a data frame (Wish_SClothes). The function is.na(Wish_SClothes) returns a logical matrix of the same dimensions as df, where:
+
+#1. TRUE represents missing (NA) values.
+#2. FALSE represents non-missing values.
+
+Wish_SClothes <- Wish_SClothes %>% distinct() # Remove duplicates if necessary
+# distinct(): 
+# 1. If used without specifying columns, it removes duplicate rows based on all columns.
+# 2. If used with specific columns, it removes duplicates based on those columns only.
+
+str(Wish_SClothes) #we checked the structure of the dataset (if there are, for instance, string values that should be numerical values)
+# Analysing the structure, we conclude that the "price" column have string values, instead of numerical values. To change this, we used the function:
+Wish_SClothes$price <- as.numeric(Wish_SClothes$price)
+#Also, we checked that some of the columns may not be useful for our data analysis. In order to clean our dataset, we removed the columns that have no interest in this study:
+Wish_SClothesV2 <- Wish_SClothes %>% select(-c(title,badges_count,badge_local_product,badge_product_quality,badge_fast_shipping,tags,product_variation_inventory,shipping_is_express,inventory_total,has_urgency_banner,urgency_text,merchant_name,merchant_info_subtitle,merchant_rating_count,merchant_has_profile_picture,merchant_profile_picture,product_picture,theme,product_url))  # The function Selects () is used to choose or remove the columns specified in the function, from a data frame.
+
+#We also checked for duplicated entries of the variable "product_id":
+duplicates <- Wish_SClothesV2 %>% 
+  group_by(product_id) %>% 
+  summarise(count = n()) %>% 
+  filter(count > 1)
+print(duplicates)
+#This will show us which "product_id" values are repeated and how many times they appear
+
+#After concluding that are repeated entries for "product_id" we removed it:
+Wish_SClothesV3 <- Wish_SClothesV2 %>% distinct()
+```
+
+## Step 2. Descriptive Analysis: we are going to describe the distribution of key variables like price, units sold, and ratings.
+
+```{r}
+# Summary statistics for "price" and "units_sold"
+summary(Wish_SClothesV3$price) #summary statistics for the "price" column in Wish_SClothesV2 dataset
+
+summary(Wish_SClothesV3$retail_price) #summary statistics for the "units_sold" column in Wish_SClothesV2 dataset
+
+summary(Wish_SClothesV3$units_sold) #summary statistics for the "units_sold" column in Wish_SClothesV2 dataset
+
+#Price Analysis:
+#1. The median price (8 EUR) is close to the mean price(8,46 EUR), indicating that the prices are fairly symmetrically distributed.
+#2. Most products (50%) are priced between 5,85 EUR and 11 EUR.
+#3. A few expensive items raise the average slightly above the median.
+#4. The maximum value is 49 EUR, indicating that it might have some outliers.
+
+#Retail Price Analysis:
+#1. The mean retail price (23,82 EUR) is significantly higher that the median (10 EUR), indicating a right-skewed distribution, meaning some products are raising the average.
+#2. Half of the products have a retail price below 10 EUR, while top 25% exceed 26 EUR.
+#3. Max retail price is 252 EUR, which is much higher that the max price (49 EUR).
+
+#Sales Performance Analysis:
+#1. The median sales (1 000 units) show that half the products sell at least 1 000 units.
+#2. The mean (4 821 units) is much higher than the median (1 000 units), indicating a few extremely high-selling products (up to 100 000 units).
+#3. Top 25% of products sell more than 5 000 units, showing strong demand for some vendors.
+
+#The analysis can also be done by using histograms and boxplots:
+
+#1.Histograms:
+
+ggplot(Wish_SClothesV3, aes(x = price)) +
+  geom_histogram(binwidth = 1, fill = "blue", color = "black", alpha = 0.7) +
+  labs(title = "Distribution of Prices", x = "Price", y = "Count") #This will give us a histogram for the variable "Price"
+#The function aes(x=prince) defines the aesthetic mapping, meaning we are plotting the variable "price" on the x axis.
+#The function geom_histogram() is the function that creates a histogram.
+#The function binwidth=5 means that the data is grouped into bins of size 5, for example. If price represents euros, each bar covers a 5EUR range.
+#fill = "blue" sets the bars to be blue.
+#color = "black" gives each bar a black outline.
+#alpha = 0.7 adjusts the transparency, making the bars slightly see-through.
+
+ggplot(Wish_SClothesV3, aes(x = retail_price)) +
+  geom_histogram(binwidth = 5, fill = "pink", color = "black", alpha = 0.7) +
+  labs(title = "Distribution of Retail Prices", x = "Retail Prices", y = "Count") #histogram for the variable "retail_price"
+
+ggplot(Wish_SClothesV3, aes(x = units_sold)) +
+  geom_histogram(binwidth = 20, fill = "yellow", color = "black", alpha = 0.7) +
+  labs(title = "Distribution of Units Sold", x = "Units Sold", y = "Count")
+
+#2.Boxplot (paired):
+
+par(mfrow=c(1, 3))  # Set up a grid of 1 row and 3 columns
+boxplot(Wish_SClothesV3$price, main = "Price", ylab = "Price", col = "lightblue", border = "darkblue")
+boxplot(Wish_SClothesV3$retail_price, main = "Retail Price", ylab = "Retail Price", col = "lightgreen", border = "darkgreen")
+boxplot(Wish_SClothesV3$units_sold, main = "Units Sold", ylab = "Units Sold", col = "lightcoral", border = "darkred")
+
+#Boxplot for the variables "price", "retail_price" and "units_sold", paired.
+
+#Analysis of the Boxplot: Price vs. Retail Price
+
+#1. Price:
+#1.1. The median price is relatively low, suggesting that most products are sold at affordable rates.
+#1.2.The interquartile range (IQR) is narrow, meaning most products are within a small price range.
+#1.3.There are some outliers with high prices, but overall, the majority of products are priced consistently.
+
+#2. Retail Price:
+#2.1. The median retail price is significantly higher than the price, confirming that many products are listed at a discount or that some items may have artificially high retail prices to create the perception of a bigger discount.
+#2.2. The IQR is wider, meaning there is greater variation in retail prices across different products.
+#2.3. More extreme outliers indicate that some products have exceptionally high retail prices compared to others.
+
+```
+
+## Step 3. Hypothesis Testing: compare the mean price of two groups, for example, small (S) vs large size clothing (L).
+
+```{r}
+#To analyse if there are a significant difference in price between small (S) and large (L) sizes, we should compute the following:
+
+#1. Filter data for two size groups (small and large):
+small_size <- Wish_SClothesV3 %>% filter(product_variation_size_id == "S") %>% pull(price)
+large_size <- Wish_SClothesV3 %>% filter(product_variation_size_id == "L") %>% pull(price)
+#The function "filter()" only selects rows where the size column has the value "S" or "L"
+#The function "pull()" extracts a single column as a vector (in this case, it extracts the price column from the filtered rows)
+
+#2. Perform t-test:
+t.test(small_size, large_size, alternative = "two.sided")
+#Two.sided means we are testing whether the means of small_size and large_size are different (either higher or lower). If we wanted to test if small_size is greater that large_size, we would use (alternative="greater"). If we wanted to test if it is less, we would use (alternative="less").
+
+#1. Hypotheses:
+#1.1. Null Hypothesis (H0): There is no significant difference between the means of small_size and large_size (meaning they are equal).
+#1.2. Alternative Hypothesis (H1): There is a significant difference between the means of small_size and large_size.
+
+#2. Results of t-test:
+
+#2.1. p-value=0,02167 - Since p<0,05, we reject the null hypothesis.
+
+```
+
+## Step 4. Data Visualization: we are going to Visualize relationships between different variables
+
+```{r}
+# Scatter plot: Price vs Units Sold
+ggplot(Wish_SClothesV3, aes(x = price, y = units_sold)) +
+  geom_point(alpha = 0.5, color = "red") +
+  labs(title = "Price vs Units Sold", x = "Price", y = "Units Sold")
+
+# Bar chart: Number of products by color
+ggplot(Wish_SClothesV3, aes(x = product_color, fill = product_color)) +
+  geom_bar() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Number of Products by Color")
+```
+```{r}
+
+
+
+
+#QUALITATIVE VARIABLES:
+
+#transform the shipping option price from numeric variables to factors to treat them as categorical:
+Wish_SClothesV3$shipping_option_price <- as.factor(Wish_SClothesV3$shipping_option_price)
+
+# Bar plot for shipping_option_price:
+ggplot(Wish_SClothesV3, aes(x = shipping_option_price, fill = shipping_option_price)) +
+  geom_bar() +
+  scale_fill_manual(values = rainbow(length(unique(Wish_SClothesV3$shipping_option_price)))) +
+  labs(title = "Distribution of Shipping Option Prices", x = "Shipping Price", y = "Count") +
+  theme_minimal()
+```
+```{r}
+Wish_SClothesV3$uses_ad_boosts <- as.factor(Wish_SClothesV3$uses_ad_boosts)
+
+ggplot(Wish_SClothesV3, aes(x = uses_ad_boosts, fill = uses_ad_boosts)) +
+  geom_bar() +
+  scale_fill_manual(values = rainbow(length(unique(Wish_SClothesV3$uses_ad_boosts)))) +
+  labs(title = "Distribution of Uses Ad Boosts", x = "Uses Ad Boosts", y = "Count") +
+  theme_minimal()
+```
+
+
+```{r}
+# Bar plot for product_color
+ggplot(Wish_SClothesV3, aes(x = product_color, fill = product_color)) +
+  geom_bar() +
+  scale_fill_manual(values = rainbow(length(unique(Wish_SClothesV3$product_color)))) +
+  labs(title = "Distribution of Product Colors", x = "Product Color", y = "Count") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+```
+```{r}
+
+# Convert product_variation_size_id to a factor
+df$product_variation_size_id <- as.factor(df$product_variation_size_id)
+
+# Bar plot for product_variation_size_id
+ggplot(df, aes(x = product_variation_size_id, fill = product_variation_size_id)) +
+  geom_bar() +
+  scale_fill_manual(values = rainbow(length(unique(df$product_variation_size_id)))) +
+  labs(title = "Distribution of Product Variation Sizes", x = "Size", y = "Count") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) # Rotate x-axis labels for readability
+
+```
+
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.> 
